@@ -1,38 +1,20 @@
 # AI-Performance-Predictor (APP)
 ### Projekt im Kurs „KI entwickeln“ (Building AI)
 
-## Zusammenfassung
+## Summary / Zusammenfassung
 
-Der AI-Performance-Predictor nutzt lineare Regression, um Callcenter-Daten aus PDFs zu analysieren. Das Tool berechnet nicht nur Vergangenheitswerte, sondern prognostiziert Trends für AHT und Anrufvolumina. Ziel ist eine proaktive Teamsteuerung und Anomalie-Erkennung zur Effizienzsteigerung. (Projekt im Kurs „KI entwickeln“)
+Der AI-Performance-Predictor nutzt lineare Regression, um Callcenter-Daten aus PDFs zu analysieren. Das Tool berechnet nicht nur Vergangenheitswerte, sondern prognostiziert Trends für AHT und Anrufvolumina. Ziel ist eine proaktive Teamsteuerung und Anomalie-Erkennung zur Effizienzsteigerung. (A project for the Building AI course)
 
-## Hintergrund
+## Background / Hintergrund
 
-In modernen Support-Teams fallen täglich riesige Mengen an Daten an, die oft nur im Nachhinein betrachtet werden. Mein Ziel ist es, den Übergang von einer reaktiven zu einer prädiktiven Analyse zu schaffen. Eine präzise Vorhersage der Bearbeitungszeit (AHT) hilft dabei, die Personalplanung zu optimieren und die Kundenzufriedenheit durch bessere Erreichbarkeit zu steigern.
+In modernen Support-Teams fallen täglich riesige Mengen an Daten an, die oft nur im Nachhinein betrachtet werden. Mein Ziel ist es, den Übergang von einer reaktiven zu einer prädiktiven Analyse zu schaffen.
 
-## Daten und KI-Techniken
+## Data and AI techniques / Daten und KI-Techniken
 
-Das Projekt stützt sich auf strukturierte Performance-Daten, die automatisiert aus PDF-Berichten extrahiert werden. Eine entsprechende Beispieldatei (Performance_Mitarbeiter_Detail.pdf) befindet sich in diesem Repository. 
+Das Projekt stützt sich auf Performance-Daten aus PDF-Berichten (siehe Beispiel im Repository). Die Verarbeitung erfolgt über ein HTML-Dashboard (index.html).
+* Lineare Regression
+* Anomalie-Erkennung
 
-Die technische Basis bildet ein HTML5/JavaScript-Dashboard (siehe index.html), welches die PDF-Daten clientseitig ausliest und für die KI-Modelle aufbereitet. Zu den Kernvariablen gehören:
+## How it is used / Wie wird es eingesetzt?
 
-* LE gesamt: Anzahl der bearbeiteten Anrufe.
-* AHT (Average Handling Time): Die durchschnittliche Bearbeitungszeit pro Fall (Ist vs. Soll).
-* ACT & ACW: Reine Gesprächszeit und Nachbearbeitungszeit.
-* Produktivität: Der prozentuale Anteil der aktiven Arbeitszeit.
-
-Techniken:
-1. Lineare Regression: Zur Berechnung der Steigung der Performance-Kurve und für Trend-Vorhersagen.
-2. Anomalie-Erkennung: Identifizierung von statistischen Ausreißern (z. B. extrem niedrige Produktivität).
-3. k-Nearest Neighbors (k-NN): Vergleich von Mitarbeiter-Profilen zur Identifikation von Best-Practice-Arbeitsweisen.
-
-## Wie wird es eingesetzt?
-
-Die Lösung wird als Web-Dashboard für Teamleiter eingesetzt. Diese laden PDF-Reports per Drag-and-Drop hoch und erhalten sofort visuelle Prognosen und Warnungen bei Anomalien. Dies entlastet die Planung und sorgt für eine faire Arbeitsverteilung.
-
-## Herausforderungen
-
-Die KI kann keine unvorhersehbaren externen Ereignisse einplanen. Zudem muss der Datenschutz bei der Verarbeitung personenbezogener Leistungsdaten höchste Priorität haben.
-
-## Wie geht es weiter?
-
-Zukünftig soll das Modell um Natural Language Processing (NLP) erweitert werden, um zusätzlich die Stimmung (Sentiment) in Gesprächsnotizen zu analysieren.
+Die Lösung wird als Web-Dashboard für Teamleiter eingesetzt. Diese laden PDF-Reports hoch und erhalten sofort visuelle Prognosen.
