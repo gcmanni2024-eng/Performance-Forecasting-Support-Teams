@@ -1,5 +1,12 @@
-## Zusammenfassung
-Der AI-Performance-Predictor nutzt lineare Regression zur Analyse von Callcenter-Daten aus PDFs für AHT-Prognosen.
+# Performance Forecasting Support Teams
 
-## Summary
-The AI-Performance-Predictor uses linear regression to analyze call center data from PDFs for AHT forecasting.
+## Zusammenfassung
+Der AI-Performance-Predictor nutzt lineare Regression zur Analyse von Callcenter-Daten aus PDFs für AHT-Prognosen. Ziel ist eine proaktive Teamsteuerung und Anomalie-Erkennung zur Effizienzsteigerung.
+
+## Background
+Mein Ziel ist der Übergang von einer reaktiven zu einer prädiktiven Analyse von Support-Daten.
+
+## Data and AI techniques
+Datenquelle: PDF-Berichte. Verarbeitung: HTML/JavaScript.
+* Lineare Regression
+* Anomalie-Erkennung
