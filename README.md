@@ -1,4 +1,4 @@
-# Performance Forecasting Support Teams
+#Performance Forecasting Support Teams
 
 ## Zusammenfassung
 Der AI-Performance-Predictor nutzt lineare Regression zur Analyse von Callcenter-Daten aus PDFs für AHT-Prognosen. Ziel ist eine proaktive Teamsteuerung und Anomalie-Erkennung zur Effizienzsteigerung.
