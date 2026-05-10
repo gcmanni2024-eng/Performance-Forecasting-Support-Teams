@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Performance-Dashboard V90</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; margin: 0; padding: 15px; color: #2c3e50; }
+        .header { display: flex; justify-content: space-between; background: #2c3e50; color: white; padding: 12px 20px; border-radius: 8px; margin-bottom: 15px; align-items: center; }
+        .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; margin-bottom: 15px; }
+        .card { background: white; padding: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); text-align: center; border-top: 4px solid #2980b9; }
+        .card h3 { font-size: 0.85em; margin: 0; color: #7f8c8d; text-transform: uppercase; }
+        .card p { margin: 5px 0 0; font-size: 1.3em; font-weight: bold; color: #2980b9; }
+        .trend-box { margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee; background: #fcfcfc; }
+        .trend-title { font-size: 0.7em; color: #95a5a6; display: block; font-weight: bold; }
+        .trend-val { font-size: 0.95em; font-weight: bold; }
+        .good { color: #27ae60; } .bad { color: #e74c3c; }
+        #preview-box { background: #fff3cd; border: 2px solid #ffeeba; padding: 20px; border-radius: 8px; margin-bottom: 20px; text-align: center; display: none; }
+        #drop-zone { border: 3px dashed #3498db; background: #fff; padding: 25px; text-align: center; border-radius: 8px; cursor: pointer; font-weight: bold; color: #3498db; margin-bottom: 15px; }
+        .charts-container { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-bottom: 15px; }
+        .chart-box { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); height: 210px; }
+        .chart-header { font-size: 0.9em; font-weight: bold; color: #34495e; margin-bottom: 8px; }
+        .btn { padding: 10px 18px; border-radius: 4px; border: none; cursor: pointer; color: white; font-weight: bold; }
+        .table-container { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9em; }
+        th, td { text-align: left; padding: 10px; border-bottom: 1px solid #ecf0f1; }
+        select { padding: 8px; border-radius: 4px; border: 1px solid #ccc; background: white; }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <div><h2 style="margin:0; font-size:1.4em;">Performance-Dashboard</h2><small>Daten-Analyse (Anonymisiert)</small></div>
+    <div style="display: flex; gap: 8px;">
+        <select id="monthSelect" onchange="refreshDashboard()"></select>
+        <select id="maFilter" onchange="refreshDashboard()"><option value="TEAM">Gesamtes Team</option></select>
+        <button class="btn" style="background:#e74c3c" onclick="resetDB()">Löschen</button>
+    </div>
+</div>
+
+<div id="drop-zone">📄 PDF HIER REINZIEHEN (Anonymisierung aktiv)</div>
+
+<div id="preview-box">
+    <h3 style="margin:0 0 10px 0; color: #856404;">📥 Neue Daten bereit</h3>
+    <p id="preview-info" style="font-weight:bold; margin-bottom:15px;">Analysiere IDs...</p>
+    <button class="btn" style="background:#27ae60" onclick="saveData()">DATEN SPEICHERN</button>
+    <button class="btn" style="background:#95a5a6; margin-left:10px;" onclick="cancelPreview()">Abbrechen</button>
+</div>
+
+<div class="stats-grid">
+    <div class="card"><h3>Monats-Calls</h3><p id="stat-calls">0</p><div class="trend-box"><span class="trend-title">Trend Morgen</span><span id="tr-calls" class="trend-val">-</span></div></div>
+    <div class="card"><h3>Ø AHT</h3><p id="stat-aht">0s</p><div class="trend-box"><span class="trend-title">Trend Morgen</span><span id="tr-aht" class="trend-val">-</span></div></div>
+    <div class="card"><h3>Ø ACT</h3><p id="stat-act">0s</p><div class="trend-box"><span class="trend-title">Trend Morgen</span><span id="tr-act" class="trend-val">-</span></div></div>
+    <div class="card"><h3>Ø ACW</h3><p id="stat-acw">0s</p><div class="trend-box"><span class="trend-title">Trend Morgen</span><span id="tr-acw" class="trend-val">-</span></div></div>
+    <div class="card"><h3>Ø Prod</h3><p id="stat-prod">0%</p><div class="trend-box"><span class="trend-title">Trend Morgen</span><span id="tr-prod" class="trend-val">-</span></div></div>
+</div>
+
+<div class="charts-container">
+    <div class="chart-box"><div class="chart-header"><span>📞 Anrufe</span></div><canvas id="chartC"></canvas></div>
+    <div class="chart-box"><div class="chart-header"><span>⏱️ AHT Ist</span></div><canvas id="chartA"></canvas></div>
+    <div class="chart-box"><div class="chart-header"><span>🗣️ ACT Gespräch</span></div><canvas id="chartACT"></canvas></div>
+    <div class="chart-box"><div class="chart-header"><span>📝 ACW Nacharbeit</span></div><canvas id="chartACW"></canvas></div>
+</div>
+
+<div class="table-container">
+    <h3 id="tableTitle" style="margin-top:0; font-size:1.1em;">Übersicht</h3>
+    <table id="dataTable"><thead id="tableHead"></thead><tbody></tbody></table>
+</div>
+
+<script>
+    let db = JSON.parse(localStorage.getItem('performance_db_v90')) || {};
+    let tempImport = null;
+    let chartInstances = {};
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.4.120/pdf.worker.min.js';
+
+    const dz = document.getElementById('drop-zone');
+    ['dragenter','dragover','dragleave','drop'].forEach(e => dz.addEventListener(e, x => { x.preventDefault(); x.stopPropagation(); }));
+    dz.addEventListener('drop', e => { if(e.dataTransfer.files[0]) prepareImport(e.dataTransfer.files[0]); });
+    dz.addEventListener('click', () => { let i=document.createElement('input'); i.type='file'; i.onchange=e=>{ if(e.target.files[0]) prepareImport(e.target.files[0]); }; i.click(); });
+
+    function prepareImport(file) {
+        document.getElementById('preview-box').style.display = 'block';
+        document.getElementById('preview-info').innerText = "Verarbeite: " + file.name;
+        processPDF(file);
+    }
+
+    async function processPDF(file) {
+        const reader = new FileReader();
+        reader.onload = async function() {
+            try {
+                const pdf = await pdfjsLib.getDocument({data: new Uint8Array(this.result)}).promise;
+                let items = [];
+                for(let i=1; i<=pdf.numPages; i++) {
+                    const page = await pdf.getPage(i);
+                    const content = await page.getTextContent();
+                    items.push(...content.items.map(it => ({ str: it.str.trim(), y: Math.round(it.transform[5]), x: Math.round(it.transform[4]) })));
+                }
+                let fullText = items.map(i => i.str).join(" ");
+                let dMatch = fullText.match(/(\d{2}\.\d{2}\.\d{4})\s*-\s*(\d{2}\.\d{2}\.\d{4})/);
+                if(!dMatch) throw new Error("Datum nicht gefunden");
+                
+                let dateKey = dMatch[1], parts = dateKey.split('.');
+                let monthLabel = new Date(parts[2], parts[1]-1).toLocaleString('de-DE', { month: 'long', year: 'numeric' });
+
+                let dayData = {};
+                items.filter(i => /\(\d{3,}\)/.test(i.str)).forEach(row => {
+                    let nums = items.filter(n => Math.abs(n.y - row.y) < 4 && /^\d+$/.test(n.str) && !['315','300','375','460'].includes(n.str)).sort((a,b) => a.x - b.x);
+                    let p = items.find(n => Math.abs(n.y - row.y) < 4 && n.str.includes('%'));
+                    if(nums.length >= 3) {
+                        let idMatch = row.str.match(/\(\d{3,}\)/);
+                        let label = idMatch ? idMatch[0] : "ID Unbekannt";
+
+                        let c = parseInt(nums[0].str), a = parseInt(nums[1].str), act = parseInt(nums[2].str), acw = parseInt(nums[nums.length-1].str);
+                        if(!dayData[label]) dayData[label] = { c:0, aS:0, actS:0, acwS:0, p:0 };
+                        dayData[label].c += c; dayData[label].aS += (a*c); dayData[label].actS += (act*c); dayData[label].acwS += (acw*c);
+                        dayData[label].p = Math.max(dayData[label].p, p ? parseFloat(p.str.replace(',','.')) : 0);
+                    }
+                });
+                tempImport = { month: monthLabel, date: dateKey, ma: Object.entries(dayData).map(([n, d]) => ({ name:n, calls:d.c, aht:Math.round(d.aS/d.c), act:Math.round(d.actS/d.c), acw:Math.round(d.acwS/d.c), prod: d.p })) };
+                document.getElementById('preview-info').innerText = "Tag erkannt: " + dateKey + " (" + tempImport.ma.length + " IDs)";
+            } catch(e) { document.getElementById('preview-info').innerText = "Fehler: " + e.message; }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function saveData() {
+        if(!tempImport) return;
+        if(!db[tempImport.month]) db[tempImport.month] = {};
+        db[tempImport.month][tempImport.date] = tempImport.ma;
+        localStorage.setItem('performance_db_v90', JSON.stringify(db));
+        document.getElementById('preview-box').style.display = 'none';
+        initMonthSelect(tempImport.month);
+        setTimeout(refreshDashboard, 100);
+    }
+
+    function cancelPreview() { document.getElementById('preview-box').style.display = 'none'; tempImport = null; }
+
+    function sortDates(arr) { return arr.sort((a,b) => { let pA=a.split('.'), pB=b.split('.'); return new Date(pA[2],pA[1]-1,pA[0]) - new Date(pB[2],pB[1]-1,pB[0]); }); }
+
+    function calculateTrend(values, calls = []) {
+        if (values.length < 2) return null;
+        let avgC = calls.reduce((a,b)=>a+b,0)/calls.length;
+        let cX=[], cY=[];
+        for(let i=0; i<values.length; i++){ if(calls[i] > avgC*0.1){ cX.push(i); cY.push(values[i]); } }
+        if(cX.length<2) return null;
+        let n=cX.length, sX=0, sY=0, sXY=0, sXX=0;
+        for(let i=0; i<n; i++){ sX+=cX[i]; sY+=cY[i]; sXY+=cX[i]*cY[i]; sXX+=cX[i]*cX[i]; }
+        let slope = (n*sXY - sX*sY) / (n*sXX - sX*sX);
+        return slope * values.length + ((sY - slope*sX)/n);
+    }
+
+    function refreshDashboard() {
+        const month = document.getElementById('monthSelect').value;
+        const filter = document.getElementById('maFilter').value;
+        if(!month || !db[month]) return;
+        const sortedDays = sortDates(Object.keys(db[month]));
+        
+        const maSel = document.getElementById('maFilter');
+        if(maSel.options.length <= 1) {
+            let names = new Set(); sortedDays.forEach(d => db[month][d].forEach(m => names.add(m.name)));
+            [...names].sort().forEach(n => maSel.innerHTML += `<option value="${n}">${n}</option>`);
+            maSel.value = filter;
+        }
+
+        let s = { c:[], a:[], act:[], acw:[], p:[], labels:[] };
+        const tbody = document.querySelector('#dataTable tbody'); tbody.innerHTML = '';
+
+        sortedDays.forEach(d => {
+            const list = db[month][d];
+            if(filter === "TEAM") {
+                s.labels.push(d.substring(0,5));
+                s.c.push(list.reduce((acc,m)=>acc+m.calls,0)); s.a.push(list.reduce((acc,m)=>acc+m.aht,0)/list.length);
+                s.act.push(list.reduce((acc,m)=>acc+m.act,0)/list.length); s.acw.push(list.reduce((acc,m)=>acc+m.acw,0)/list.length);
+                s.p.push(list.reduce((acc,m)=>acc+m.prod,0)/list.length);
+            } else {
+                const m = list.find(x => x.name === filter);
+                if(m) { 
+                    s.labels.push(d.substring(0,5));
+                    s.c.push(m.calls); s.a.push(m.aht); s.act.push(m.act); s.acw.push(m.acw); s.p.push(m.prod); 
+                    tbody.innerHTML += `<tr><td>${d}</td><td>${m.calls}</td><td>${m.aht}s</td><td>${m.act}s</td><td>${m.acw}s</td><td>${m.prod.toFixed(1)}%</td></tr>`; 
+                }
+            }
+        });
+
+        const avg = (arr) => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : 0;
+        document.getElementById('stat-calls').innerText = Math.round(avg(s.c) * s.c.length);
+        document.getElementById('stat-aht').innerText = Math.round(avg(s.a)) + "s";
+        document.getElementById('stat-act').innerText = Math.round(avg(s.act)) + "s";
+        document.getElementById('stat-acw').innerText = Math.round(avg(s.acw)) + "s";
+        document.getElementById('stat-prod').innerText = avg(s.p).toFixed(1) + "%";
+
+        const updT = (id, cur, trend, isT=true) => {
+            const el = document.getElementById(id); if(!trend){ el.innerText="-"; return; }
+            const diff = trend - cur; el.innerText = Math.round(trend) + (isT?'s':'') + (diff > 0 ? " ↑" : " ↓");
+            el.className = "trend-val " + ((isT ? diff < 0 : diff > 0) ? "good" : "bad");
+        };
+        updT('tr-calls', avg(s.c), calculateTrend(s.c, s.c), false); updT('tr-aht', avg(s.a), calculateTrend(s.a, s.c));
+        updT('tr-act', avg(s.act), calculateTrend(s.act, s.c)); updT('tr-acw', avg(s.acw), calculateTrend(s.acw, s.c));
+        updT('tr-prod', avg(s.p), calculateTrend(s.p, s.c), false);
+
+        document.getElementById('tableHead').innerHTML = filter==="TEAM" ? "<tr><th>ID</th><th>Calls</th><th>Ø AHT</th><th>Ø ACT</th><th>Ø ACW</th><th>Ø Prod</th></tr>" : "<tr><th>Datum</th><th>Calls</th><th>AHT</th><th>ACT</th><th>ACW</th><th>Prod</th></tr>";
+        if(filter === "TEAM") {
+            let kum = {}; sortedDays.forEach(d => db[month][d].forEach(m => {
+                if(!kum[m.name]) kum[m.name] = { c:0, a:0, act:0, acw:0, p:0, n:0 };
+                kum[m.name].c += m.calls; kum[m.name].a += m.aht; kum[m.name].act += m.act; kum[m.name].acw += m.acw; kum[m.name].p += m.prod; kum[m.name].n++;
+            }));
+            Object.entries(kum).sort().forEach(([n, d]) => { tbody.innerHTML += `<tr><td>${n}</td><td>${d.c}</td><td>${Math.round(d.a/d.n)}s</td><td>${Math.round(d.act/d.n)}s</td><td>${Math.round(d.acw/d.n)}s</td><td>${(d.p/d.n).toFixed(1)}%</td></tr>`; });
+        }
+        renderCharts(s);
+    }
+
+    function renderCharts(s) {
+        const cfg = (id, label, data, color) => {
+            const ctx = document.getElementById('chart' + id);
+            if(chartInstances[id]) chartInstances[id].destroy();
+            chartInstances[id] = new Chart(ctx, {
+                type:'line', data:{labels: s.labels, datasets:[{label, data, borderColor:color, tension:0.3, fill:true, backgroundColor:color+'15'}]},
+                options:{maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{x:{grid:{display:false}}, y:{beginAtZero:false}}}
+            });
+        };
+        cfg('C', 'Calls', s.c, '#2980b9'); cfg('A', 'AHT', s.a, '#e67e22'); cfg('ACT', 'ACT', s.act, '#27ae60'); cfg('ACW', 'ACW', s.acw, '#8e44ad');
+    }
+
+    function initMonthSelect(selected) {
+        const sel = document.getElementById('monthSelect');
+        const months = Object.keys(db).sort((a,b) => b.localeCompare(a));
+        sel.innerHTML = months.map(m => `<option value="${m}" ${m===selected?'selected':''}>${m}</option>`).join('') || '<option>Keine Daten</option>';
+    }
+
+    function resetDB() { if(confirm("Dashboard leeren?")) { localStorage.removeItem('performance_db_v90'); location.reload(); } }
+    window.onload = () => { if(Object.keys(db).length > 0) { initMonthSelect(Object.keys(db).sort().pop()); refreshDashboard(); } };
+</script>
+</body>
+</html>
